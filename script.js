@@ -5,7 +5,7 @@
 // To samo hasło jest też sekretem wysyłanym do backendu przy zapisie
 // (nagłówek X-Auth-Secret) — patrz saveEntry()/runWeeklySummary niżej.
 const CORRECT_HASH =
-  "43a08f05ca7fd7d0cec660a7d2e7ae3d451e5e9f7f9bddabba99b4053ba79ef2";
+  "d38c9ea4eb4e9e9837b51c4155cb246a82ce89b58261eebe9ea497ed4b49f4ce";
 const SESSION_KEY = "waga-unlocked";
 const SECRET_SESSION_KEY = "waga-secret";
 
