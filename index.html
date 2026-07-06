@@ -1,0 +1,81 @@
+<title>Waga — Paweł</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<link rel="stylesheet" href="style.css" />
+
+<div id="lock-screen" class="lock-screen">
+  <div class="lock-box">
+    <p class="lock-title">Waga</p>
+    <p class="lock-sub">Podaj hasło, żeby zobaczyć dziennik wagi.</p>
+    <input type="password" id="password-input" autocomplete="off" placeholder="Hasło" />
+    <button id="unlock-btn">Odblokuj</button>
+    <p id="lock-error" class="lock-error"></p>
+  </div>
+</div>
+
+<main id="content" class="content hidden">
+  <header class="page-header">
+    <h1>Waga — Paweł</h1>
+    <p class="subtitle">Codzienny wpis wagi i kalorii — cel: lean bulk do 80 kg</p>
+    <p id="load-status" class="load-status">Ładowanie…</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="week">Ten tydzień</button>
+    <button class="tab-btn" data-tab="trend">Trend</button>
+  </nav>
+
+  <section class="tab-panel" id="tab-week">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Dzień tygodnia</th>
+            <th>Data</th>
+            <th>Waga (kg)</th>
+            <th>Kcal</th>
+            <th>Średnia 7-dniowa (kg)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="week-body"></tbody>
+      </table>
+    </div>
+    <p class="hint">
+      Wpisz datę, wagę i kalorie (z Fitatu) i kliknij "Zapisz" — zapis trafia od razu
+      do bazy appki. Średnia 7-dniowa liczy się automatycznie z tego, co już wpisane w
+      tym tygodniu (nie trzeba czekać na komplet 7 dni).
+    </p>
+  </section>
+
+  <section class="tab-panel hidden" id="tab-trend">
+    <div id="latest-verdict" class="verdict-box">
+      <p class="load-status">Ładowanie…</p>
+    </div>
+    <h2 class="history-title">Historia tygodni</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tydzień</th>
+            <th>Śr. waga (kg)</th>
+            <th>Śr. kcal</th>
+            <th>Trend</th>
+            <th>Rekomendacja</th>
+          </tr>
+        </thead>
+        <tbody id="summary-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="page-footer">
+    <p>
+      Podsumowanie tygodnia liczy się automatycznie w każdą niedzielę ~20:00. Archiwizacja
+      do repo mózgu (health/waga.md) i czyszczenie tabeli na nowy tydzień robi trener-personalny
+      ręcznie, przy najbliższej rozmowie / cotygodniowej analizie.
+    </p>
+  </footer>
+</main>
+
+<script src="script.js"></script>

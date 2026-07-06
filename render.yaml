@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: waga-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.6 # Render domyslnie wybiera zbyt nowego Pythona (brak wheeli dla pydantic-core)
+      - key: APP_SECRET
+        sync: false # ustaw recznie w Render Dashboard -> Environment
+      - key: DATABASE_URL
+        sync: false # ustaw recznie: connection string z Neon (postgresql://...neon.tech/...?sslmode=require)
+
+# Baza NIE jest hostowana na Renderze (darmowy Render Postgres kasuje dane po 30
+# dniach - nie do przyjecia dla dziennika wagi). Zamiast tego uzywamy Neon
+# (neon.tech) - darmowy Postgres bez limitu czasowego, dane nie znikaja same
+# (tylko compute usypia po bezczynnosci i budzi sie przy nastepnym polaczeniu).
+# Osobny projekt Neon niz PlanTreningowy - te dwie appki nie dziela bazy.
+# Render hostuje wylacznie sam serwis FastAPI (bezstanowy, wiec efemeryczny dysk
+# darmowego web service nie ma juz znaczenia) i laczy sie z Neon przez internet.

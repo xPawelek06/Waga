@@ -1,0 +1,7 @@
+backend/__pycache__/
+backend/*.pyc
+backend/local.db
+backend/.env
+.venv/
+.idea/
+backend/test_local.db
