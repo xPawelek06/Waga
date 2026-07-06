@@ -35,5 +35,5 @@ jobs:
             -H "X-Auth-Secret: ${APP_SECRET}" \
             -H "Content-Type: application/json"
         env:
-          API_BASE: https://waga-api.onrender.com
+          API_BASE: https://waga-api-vorc.onrender.com
           APP_SECRET: ${{ secrets.APP_SECRET }}

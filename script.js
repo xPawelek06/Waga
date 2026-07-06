@@ -9,7 +9,7 @@ const CORRECT_HASH =
 const SESSION_KEY = "waga-unlocked";
 const SECRET_SESSION_KEY = "waga-secret";
 
-const API_BASE = "https://waga-api.onrender.com";
+const API_BASE = "https://waga-api-vorc.onrender.com";
 
 let authSecret = "";
 

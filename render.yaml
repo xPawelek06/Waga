@@ -1,6 +1,9 @@
 services:
   - type: web
-    name: waga-api
+    name: waga-api # nazwa "waga-api" byla zajeta na Renderze - faktyczny serwis
+    # dostal URL https://waga-api-vorc.onrender.com (zaszyty w script.js i w
+    # .github/workflows/weekly-summary.yml) - ten wpis w blueprincie zostaje
+    # bez zmian, zmiana nazwy tutaj nie przemianuje juz istniejacego serwisu.
     runtime: python
     plan: free
     rootDir: backend
