@@ -37,6 +37,16 @@ class WeekOut(BaseModel):
     avg_kcal_7d: Optional[float] = None
 
 
+class WeeklySummaryCreate(BaseModel):
+    """Trend i rekomendacja sa oceniane przez wywolujacego (trener-personalny, z
+    pelnym kontekstem: cel 80 kg, trend treningowy) - backend juz ich NIE liczy
+    mechanicznie. Srednia wagi/kcal wciaz jest liczona tutaj automatycznie z
+    day_entries (patrz main.py: run_weekly_summary), bo to fakt, nie ocena."""
+
+    trend: str
+    kcal_recommendation: str
+
+
 class WeeklySummaryOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -108,23 +108,6 @@ def current_week_bounds(today: Optional[date] = None):
     return week_start, week_end
 
 
-def compute_trend(avg_weight_kg: Optional[float], previous: Optional[models.WeeklySummary]):
-    """Reguly z health/CLAUDE.md w repo mozgu (lean bulk do 80 kg, tempo 0,25-0,4
-    kg/tydzien): stoi/spada -> +150-200 kcal; rosnie >0,5 kg/tydz -> -150 kcal;
-    w zdrowym tempie (0 < delta <= 0,5) -> kaloryka OK, bez zmian."""
-    if avg_weight_kg is None:
-        return None, "Brak wpisów wagi w tym tygodniu — nie można ocenić trendu."
-    if previous is None or previous.avg_weight_kg is None:
-        return None, "Za mało danych — wróć za tydzień."
-
-    delta = round(avg_weight_kg - previous.avg_weight_kg, 2)
-    if delta <= 0:
-        return "stoi/spada", "Kaloryka za niska — dodaj +150 do +200 kcal/dzień."
-    if delta > 0.5:
-        return "rośnie za szybko", "Kaloryka za wysoka — odejmij 150 kcal/dzień."
-    return "rośnie w zdrowym tempie", "Kaloryka OK — bez zmian."
-
-
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
@@ -198,22 +181,18 @@ def clear_week(db: Session = Depends(get_db)):
     response_model=schemas.WeeklySummaryOut,
     dependencies=[Depends(require_secret)],
 )
-def run_weekly_summary(db: Session = Depends(get_db)):
-    """Liczy srednia wagi/kcal biezacego tygodnia, porownuje z ostatnim zapisanym
-    wierszem WeeklySummary i dopisuje/aktualizuje wiersz dla tego tygodnia.
-    Wyzwalane co niedziele ~20:00 (Europe/Warsaw) przez GitHub Actions - patrz
-    .github/workflows/weekly-summary.yml. Idempotentne: wywolanie drugi raz w tym
-    samym tygodniu nadpisuje ten sam wiersz (upsert po week_start), a nie dubluje."""
+def run_weekly_summary(payload: schemas.WeeklySummaryCreate, db: Session = Depends(get_db)):
+    """Zapisuje podsumowanie biezacego tygodnia. Srednia wagi/kcal jest liczona
+    TUTAJ automatycznie z day_entries (fakt, nie ocena) - dlatego wywolaj ten
+    endpoint PRZED DELETE /api/admin/week, inaczej dane do usrednienia juz znikna.
+    Trend i kcal_recommendation NIE sa liczone mechanicznie (dawny wzor z
+    health/CLAUDE.md przeniesiony do GitHub Actions zostal wycofany 2026-07-09) -
+    dostarcza je wywolujacy (trener-personalny), ktory ocenia to z pelnym
+    kontekstem (cel 80 kg, trend treningowy), nie sucha formula.
+    Idempotentne: wywolanie drugi raz w tym samym tygodniu nadpisuje ten sam
+    wiersz (upsert po week_start), a nie dubluje."""
     week_start, week_end = current_week_bounds()
     avg_weight, avg_kcal = compute_week_averages(db)
-
-    previous = (
-        db.query(models.WeeklySummary)
-        .filter(models.WeeklySummary.week_start < week_start)
-        .order_by(models.WeeklySummary.week_start.desc())
-        .first()
-    )
-    trend, recommendation = compute_trend(avg_weight, previous)
 
     existing = (
         db.query(models.WeeklySummary)
@@ -224,8 +203,8 @@ def run_weekly_summary(db: Session = Depends(get_db)):
         existing.week_end = week_end
         existing.avg_weight_kg = avg_weight
         existing.avg_kcal = avg_kcal
-        existing.trend = trend
-        existing.kcal_recommendation = recommendation
+        existing.trend = payload.trend
+        existing.kcal_recommendation = payload.kcal_recommendation
         row = existing
     else:
         row = models.WeeklySummary(
@@ -233,8 +212,8 @@ def run_weekly_summary(db: Session = Depends(get_db)):
             week_end=week_end,
             avg_weight_kg=avg_weight,
             avg_kcal=avg_kcal,
-            trend=trend,
-            kcal_recommendation=recommendation,
+            trend=payload.trend,
+            kcal_recommendation=payload.kcal_recommendation,
         )
         db.add(row)
 
