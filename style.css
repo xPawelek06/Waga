@@ -326,6 +326,10 @@ td input[type="number"] {
   .action-cell::before {
     display: none;
   }
+
+  td[data-label=""]::before {
+    display: none;
+  }
 }
 
 /* --- Light theme support --- */

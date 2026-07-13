@@ -135,10 +135,9 @@ function buildRow(day, avgWeight7d) {
 }
 
 async function loadWeek() {
-  setLoadStatus("Ładowanie…", false);
+  setLoadStatus("Ładowanie… (jeśli backend spał, może to potrwać do 30 sek)", false);
   try {
-    const resp = await fetch(`${API_BASE}/api/week`);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const resp = await fetchWithRetry(`${API_BASE}/api/week`);
     const week = await resp.json();
 
     const tbody = document.getElementById("week-body");
@@ -191,6 +190,32 @@ async function saveEntry(weekDayId, entryDate, weight, kcal, button, statusEl) {
   }
 }
 
+// --- Fetch z ponawianiem: darmowy plan Render usypia backend/baze po ~15 min
+// bezczynnosci - pierwszy request po uspieniu regularnie konczy sie 500/timeoutem
+// (baza jeszcze sie "budzi"), kolejny juz przechodzi. Z komputera appka bywa
+// testowana zaraz po innej interakcji (backend juz rozgrzany), z telefonu
+// zwykle po dluzszej przerwie - stad wrazenie "na telefonie nic sie nie
+// pokazuje", choc to nie jest bug specyficzny dla urzadzenia, tylko wyscig ze
+// stanem backendu. Ponawiamy kilka razy zanim pokazemy blad.
+async function fetchWithRetry(url, options, attempts, delayMs) {
+  attempts = attempts || 3;
+  delayMs = delayMs || 1500;
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const resp = await fetch(url, options);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      return resp;
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) {
+        await new Promise((r) => setTimeout(r, delayMs * (i + 1)));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 // --- Trend: historia podsumowań tygodniowych ---
 
 function renderVerdict(summaries) {
@@ -225,27 +250,61 @@ function renderVerdict(summaries) {
 function renderSummaryHistory(summaries) {
   const tbody = document.getElementById("summary-body");
   tbody.innerHTML = "";
+  if (!summaries.length) {
+    const tr = document.createElement("tr");
+    tr.appendChild(
+      makeEl("td", { text: "Brak podsumowań jeszcze.", attrs: { "data-label": "" } })
+    );
+    tbody.appendChild(tr);
+    return;
+  }
   for (const s of summaries) {
     const tr = document.createElement("tr");
-    tr.appendChild(makeEl("td", { text: `${s.week_start} – ${s.week_end}` }));
-    tr.appendChild(makeEl("td", { text: s.avg_weight_kg !== null ? String(s.avg_weight_kg) : "—" }));
-    tr.appendChild(makeEl("td", { text: s.avg_kcal !== null ? String(s.avg_kcal) : "—" }));
-    tr.appendChild(makeEl("td", { text: s.trend || "—" }));
-    tr.appendChild(makeEl("td", { text: s.kcal_recommendation || "—" }));
+    tr.appendChild(
+      makeEl("td", { text: `${s.week_start} – ${s.week_end}`, attrs: { "data-label": "Tydzień" } })
+    );
+    tr.appendChild(
+      makeEl("td", {
+        text: s.avg_weight_kg !== null ? String(s.avg_weight_kg) : "—",
+        attrs: { "data-label": "Śr. waga (kg)" },
+      })
+    );
+    tr.appendChild(
+      makeEl("td", {
+        text: s.avg_kcal !== null ? String(s.avg_kcal) : "—",
+        attrs: { "data-label": "Śr. kcal" },
+      })
+    );
+    tr.appendChild(makeEl("td", { text: s.trend || "—", attrs: { "data-label": "Trend" } }));
+    tr.appendChild(
+      makeEl("td", { text: s.kcal_recommendation || "—", attrs: { "data-label": "Rekomendacja" } })
+    );
     tbody.appendChild(tr);
   }
 }
 
 async function loadSummaries() {
+  const verdictBox = document.getElementById("latest-verdict");
+  verdictBox.innerHTML = '<p class="load-status">Ładowanie… (jeśli backend spał, może to potrwać do 30 sek)</p>';
   try {
-    const resp = await fetch(`${API_BASE}/api/weekly-summary`);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const resp = await fetchWithRetry(`${API_BASE}/api/weekly-summary`);
     const summaries = await resp.json();
     renderVerdict(summaries);
     renderSummaryHistory(summaries);
   } catch (err) {
     console.error("Błąd ładowania podsumowań:", err);
-    document.getElementById("latest-verdict").innerHTML =
-      '<p class="load-status load-error">Nie udało się pobrać historii trendu.</p>';
+    verdictBox.innerHTML =
+      '<p class="load-status load-error">Nie udało się pobrać historii trendu. Sprawdź internet i spróbuj odświeżyć stronę.</p>';
+    const tbody = document.getElementById("summary-body");
+    tbody.innerHTML = "";
+    const tr = document.createElement("tr");
+    tr.appendChild(
+      makeEl("td", {
+        text: "Nie udało się pobrać historii.",
+        className: "load-error",
+        attrs: { "data-label": "" },
+      })
+    );
+    tbody.appendChild(tr);
   }
 }
