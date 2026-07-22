@@ -11,9 +11,14 @@
 #
 # Uzycie na serwerze: `docker compose up -d --build`
 # Sekrety (DATABASE_URL, APP_SECRET) w backend/.env — NIE w tym repo (gitignore).
+#
+# 2026-07-22: nazwa serwisu zmieniona z generycznego "backend" na
+# "waga-backend" — patrz komentarz w MeetingReminder/docker-compose.yml,
+# ten sam root cause (kolizja aliasu "backend" na wspoldzielonej sieci
+# Dockera z trzema projektami).
 
 services:
-  backend:
+  waga-backend:
     build: ./backend
     container_name: waga-backend
     restart: unless-stopped
