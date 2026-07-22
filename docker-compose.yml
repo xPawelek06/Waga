@@ -1,0 +1,36 @@
+# Wdrozenie produkcyjne backendu Waga na VM (GCP, paw-projects) — hosting
+# tymczasowy (trial GCP, do 21.09.2026), zastepuje Render. Baza (Neon Postgres)
+# zostaje bez zmian, zewnetrzna - ten compose hostuje wylacznie sam serwis FastAPI.
+#
+# Reverse proxy + HTTPS: WSPOLNY Caddy z appka MeetingReminder (jeden Caddy na
+# VM, wiele blokow/subdomen sslip.io - patrz ~/MeetingReminder/Caddyfile na
+# serwerze), zeby nie kolidowac o porty 80/443 z innymi appkami na tej samej
+# VM. Dlatego ten serwis NIE publikuje portu na hosta (tylko "expose") i laczy
+# sie z siecia Dockera nalezaca do projektu meetingreminder (musi juz istniec
+# na serwerze - powstaje automatycznie przy `docker compose up` w MeetingReminder).
+#
+# Uzycie na serwerze: `docker compose up -d --build`
+# Sekrety (DATABASE_URL, APP_SECRET) w backend/.env — NIE w tym repo (gitignore).
+
+services:
+  backend:
+    build: ./backend
+    container_name: waga-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - webproxy
+
+networks:
+  webproxy:
+    name: meetingreminder_default
+    external: true
